@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget App Architecture - Backend & Frontend Connection</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@300;600;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #131937;
+            --accent-1: #00ff88;
+            --accent-2: #00d4ff;
+            --accent-3: #ff006e;
+            --text-primary: #e4f0fb;
+            --text-secondary: #8b9dc3;
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f3a 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+        
+        .architecture-container {
+            display: grid;
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        /* Main flow diagram */
+        .flow-diagram {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 20px;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .flow-diagram::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .flow-layers {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .layer {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .layer-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .component {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+        
+        .component:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-1);
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+        }
+        
+        .component-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+        }
+        
+        .component-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .component-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        .component-tech {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-2);
+        }
+        
+        /* Connection arrows */
+        .arrow {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 0;
+            opacity: 0.5;
+        }
+        
+        .arrow::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid var(--accent-2);
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+        
+        .arrow-1 {
+            left: 33%;
+            width: 33%;
+            animation: flow 2s ease-in-out infinite;
+        }
+        
+        .arrow-2 {
+            left: 66%;
+            width: 33%;
+            animation: flow 2s ease-in-out infinite 0.3s;
+        }
+        
+        @keyframes flow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Data flow animation */
+        .data-packet {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-1);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-1);
+            animation: movePacket 3s linear infinite;
+            top: 50%;
+            left: 0;
+        }
+        
+        @keyframes movePacket {
+            0% { left: 33%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+        
+        /* Code examples section */
+        .code-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+        
+        .code-card {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .code-card:hover {
+            border-color: var(--accent-2);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.2);
+        }
+        
+        .code-header {
+            padding: 1rem 1.5rem;
+            background: rgba(0, 212, 255, 0.1);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-2);
+            font-weight: 600;
+        }
+        
+        .code-content {
+            padding: 1.5rem;
+        }
+        
+        pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            overflow-x: auto;
+        }
+        
+        .code-content p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* Request flow visualization */
+        .request-flow {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255, 0, 110, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .request-flow h3 {
+            color: var(--accent-3);
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+        }
+        
+        .flow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            padding: 2rem 0;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-3), #ff4d94);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 5px 20px rgba(255, 0, 110, 0.4);
+        }
+        
+        .step-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .step-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .flow-line {
+            position: absolute;
+            top: 25px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-3), #ff4d94);
+            z-index: 0;
+        }
+        
+        /* Interactive toggle */
+        .toggle-section {
+            margin-top: 3rem;
+            text-align: center;
+        }
+        
+        .toggle-btn {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: var(--bg-primary);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+        }
+        
+        .detailed-info {
+            display: none;
+            margin-top: 2rem;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 12px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .detailed-info.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .flow-layers {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .arrow {
+                display: none;
+            }
+            
+            .flow-steps {
+                flex-direction: column;
+                gap: 2rem;
+            }
+            
+            .flow-line {
+                display: none;
+            }
+        }
+        
+        /* Syntax highlighting */
+        .keyword { color: #ff006e; }
+        .string { color: #00ff88; }
+        .function { color: #00d4ff; }
+        .comment { color: #8b9dc3; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Budget App Architecture</h1>
+        <p class="subtitle">How Backend & Frontend Connect in a Modern Web Application</p>
+        
+        <div class="architecture-container">
+            <!-- Main Architecture Flow -->
+            <div class="flow-diagram">
+                <div class="arrow arrow-1"></div>
+                <div class="arrow arrow-2"></div>
+                <div class="data-packet"></div>
+                <div class="data-packet" style="animation-delay: 1s;"></div>
+                
+                <div class="flow-layers">
+                    <!-- Frontend Layer -->
+                    <div class="layer">
+                        <div class="layer-title">→ Frontend (UI)</div>
+                        
+                        <div class="component">
+                            <div class="component-icon">🎨</div>
+                            <div class="component-name">React Components</div>
+                            <div class="component-desc">
+                                User interface elements: buttons, forms, charts, tables. 
+                                What users see and interact with.
+                            </div>
+                            <div class="component-tech">Next.js + React + TypeScript</div>
+                        </div>
+                        
+                        <div class="component">
+                            <div class="component-icon">📊</div>
+                            <div class="component-name">State Management</div>
+                            <div class="component-desc">
+                                Stores app data in memory. Tracks user inputs, budget data, 
+                                current view state.
+                            </div>
+                            <div class="component-tech">Zustand / Redux</div>
+                        </div>
+                        
+                        <div class="component">
+                            <div class="component-icon">🔌</div>
+                            <div class="component-name">API Client</div>
+                            <div class="component-desc">
+                                Makes HTTP requests to backend. Sends user actions 
+                                (add expense, get totals).
+                            </div>
+                            <div class="component-tech">Fetch API / Axios</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Backend Layer -->
+                    <div class="layer">
+                        <div class="layer-title">→ Backend (Server)</div>
+                        
+                        <div class="component">
+                            <div class="component-icon">🚀</div>
+                            <div class="component-name">API Routes</div>
+                            <div class="component-desc">
+                                Endpoints that receive requests: /api/transactions, 
+                                /api/budget, /api/dashboard
+                            </div>
+                            <div class="component-tech">Next.js API Routes / Express</div>
+                        </div>
+                        
+                        <div class="component">
+                            <div class="component-icon">⚙️</div>
+                            <div class="component-name">Business Logic</div>
+                            <div class="component-desc">
+                                Calculates totals, savings rate, budget vs actual. 
+                                All spreadsheet formulas live here.
+                            </div>
+                            <div class="component-tech">Node.js / TypeScript</div>
+                        </div>
+                        
+                        <div class="component">
+                            <div class="component-icon">🔒</div>
+                            <div class="component-name">Authentication</div>
+                            <div class="component-desc">
+                                Verifies user identity. Ensures only you see your budget data.
+                            </div>
+                            <div class="component-tech">NextAuth.js / JWT</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Database Layer -->
+                    <div class="layer">
+                        <div class="layer-title">→ Database (Storage)</div>
+                        
+                        <div class="component">
+                            <div class="component-icon">💾</div>
+                            <div class="component-name">PostgreSQL</div>
+                            <div class="component-desc">
+                                Permanent storage for all data: transactions, budgets, 
+                                goals, user settings.
+                            </div>
+                            <div class="component-tech">PostgreSQL / Supabase</div>
+                        </div>
+                        
+                        <div class="component">
+                            <div class="component-icon">📋</div>
+                            <div class="component-name">Tables</div>
+                            <div class="component-desc">
+                                Organized data structure: users, transactions, 
+                                budgets, goals, categories.
+                            </div>
+                            <div class="component-tech">SQL Tables</div>
+                        </div>
+                        
+                        <div class="component">
+                            <div class="component-icon">🔍</div>
+                            <div class="component-name">Queries</div>
+                            <div class="component-desc">
+                                Retrieve and update data. Backend asks database questions 
+                                in SQL language.
+                            </div>
+                            <div class="component-tech">SQL / Prisma ORM</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Request Flow Example -->
+            <div class="request-flow">
+                <h3>📡 Example: User Adds an Expense</h3>
+                <div class="flow-steps">
+                    <div class="flow-line"></div>
+                    
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-label">User Action</div>
+                        <div class="step-desc">Clicks "Add Expense"<br>fills form, submits</div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Frontend</div>
+                        <div class="step-desc">Validates data,<br>sends POST request</div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Backend</div>
+                        <div class="step-desc">Receives request,<br>processes data</div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-label">Database</div>
+                        <div class="step-desc">Saves expense<br>to transactions table</div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <div class="step-label">Response</div>
+                        <div class="step-desc">Backend sends success,<br>UI updates instantly</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Code Examples -->
+            <div class="code-examples">
+                <div class="code-card">
+                    <div class="code-header">Frontend Component (React)</div>
+                    <div class="code-content">
+                        <p>User interface for adding an expense</p>
+<pre><span class="keyword">function</span> <span class="function">AddExpenseForm</span>() {
+  <span class="keyword">const</span> [amount, setAmount] = useState(<span class="string">''</span>);
+  
+  <span class="keyword">const</span> <span class="function">handleSubmit</span> = <span class="keyword">async</span> () => {
+    <span class="comment">// Call backend API</span>
+    <span class="keyword">await</span> <span class="function">fetch</span>(<span class="string">'/api/transactions'</span>, {
+      method: <span class="string">'POST'</span>,
+      body: JSON.<span class="function">stringify</span>({ amount })
+    });
+  };
+  
+  <span class="keyword">return</span> <span class="function">&lt;button</span> onClick={handleSubmit}<span class="function">&gt;</span>Save<span class="function">&lt;/button&gt;</span>
+}</pre>
+                    </div>
+                </div>
+                
+                <div class="code-card">
+                    <div class="code-header">Backend API Route (Node.js)</div>
+                    <div class="code-content">
+                        <p>Receives request and saves to database</p>
+<pre><span class="keyword">export async function</span> <span class="function">POST</span>(request) {
+  <span class="keyword">const</span> { amount } = <span class="keyword">await</span> request.<span class="function">json</span>();
+  
+  <span class="comment">// Save to database</span>
+  <span class="keyword">const</span> expense = <span class="keyword">await</span> db.transactions.<span class="function">create</span>({
+    amount,
+    date: <span class="keyword">new</span> Date(),
+    userId: session.user.id
+  });
+  
+  <span class="keyword">return</span> Response.<span class="function">json</span>(expense);
+}</pre>
+                    </div>
+                </div>
+                
+                <div class="code-card">
+                    <div class="code-header">Database Query (SQL)</div>
+                    <div class="code-content">
+                        <p>Database stores the transaction</p>
+<pre><span class="keyword">INSERT INTO</span> transactions
+  (user_id, amount, date, category_id)
+<span class="keyword">VALUES</span>
+  (<span class="string">'user-123'</span>, <span class="string">50.00</span>, <span class="string">'2026-01-20'</span>, <span class="string">'food'</span>);
+
+<span class="comment">-- Then calculate totals</span>
+<span class="keyword">SELECT SUM</span>(amount) 
+<span class="keyword">FROM</span> transactions
+<span class="keyword">WHERE</span> user_id = <span class="string">'user-123'</span>;</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Interactive Toggle -->
+            <div class="toggle-section">
+                <button class="toggle-btn" onclick="toggleDetails()">
+                    Show More Details
+                </button>
+                
+                <div class="detailed-info" id="detailedInfo">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-1);">Deep Dive: How It All Works Together</h3>
+                    
+                    <div style="display: grid; gap: 2rem; margin-top: 2rem;">
+                        <div>
+                            <h4 style="color: var(--accent-2); margin-bottom: 1rem;">🎯 Frontend Responsibilities</h4>
+                            <ul style="color: var(--text-secondary); line-height: 2; list-style-position: inside;">
+                                <li>Render UI components (buttons, forms, charts)</li>
+                                <li>Handle user interactions (clicks, typing, scrolling)</li>
+                                <li>Validate input before sending to backend</li>
+                                <li>Make API calls to backend</li>
+                                <li>Display loading states and errors</li>
+                                <li>Update UI instantly after actions</li>
+                                <li>Cache data for better performance</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h4 style="color: var(--accent-2); margin-bottom: 1rem;">⚡ Backend Responsibilities</h4>
+                            <ul style="color: var(--text-secondary); line-height: 2; list-style-position: inside;">
+                                <li>Receive HTTP requests from frontend</li>
+                                <li>Authenticate user (check they're logged in)</li>
+                                <li>Validate data thoroughly</li>
+                                <li>Execute business logic (calculations, rules)</li>
+                                <li>Query database for data</li>
+                                <li>Format and send response back to frontend</li>
+                                <li>Handle errors gracefully</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h4 style="color: var(--accent-2); margin-bottom: 1rem;">💾 Database Responsibilities</h4>
+                            <ul style="color: var(--text-secondary); line-height: 2; list-style-position: inside;">
+                                <li>Store all data permanently</li>
+                                <li>Organize data in structured tables</li>
+                                <li>Execute queries efficiently</li>
+                                <li>Maintain data integrity (no duplicates, valid relationships)</li>
+                                <li>Handle concurrent access (multiple users at once)</li>
+                                <li>Backup data regularly</li>
+                                <li>Retrieve data quickly through indexes</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="background: rgba(255, 0, 110, 0.1); padding: 1.5rem; border-radius: 12px; border-left: 3px solid var(--accent-3);">
+                            <h4 style="color: var(--accent-3); margin-bottom: 1rem;">🔥 Key Concept: Separation of Concerns</h4>
+                            <p style="color: var(--text-secondary); line-height: 1.8;">
+                                Each layer has ONE job. Frontend = Look Good. Backend = Do Smart Things. 
+                                Database = Remember Everything. This separation makes the app easier to build, 
+                                test, and maintain. You can change the UI without touching backend code, or 
+                                switch databases without rewriting the frontend.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleDetails() {
+            const info = document.getElementById('detailedInfo');
+            const btn = document.querySelector('.toggle-btn');
+            
+            if (info.classList.contains('active')) {
+                info.classList.remove('active');
+                btn.textContent = 'Show More Details';
+            } else {
+                info.classList.add('active');
+                btn.textContent = 'Hide Details';
+                info.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        
+        // Add click handlers to components for interactivity
+        document.querySelectorAll('.component').forEach(component => {
+            component.addEventListener('click', function() {
+                const name = this.querySelector('.component-name').textContent;
+                const desc = this.querySelector('.component-desc').textContent;
+                
+                // Simple alert for demo - in real app would show modal
+                console.log(`Clicked: ${name}`);
+            });
+        });
+    </script>
+</body>
+</html>
